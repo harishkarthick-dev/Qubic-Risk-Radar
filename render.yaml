@@ -119,6 +119,14 @@ services:
       # CORS - allow frontend access
       - key: CORS_ORIGINS
         value: '["https://qubic-risk-radar.onrender.com"]'
+  
+  # Redis Cache
+  - type: redis
+    name: qubic-risk-radar-redis
+    plan: free
+    region: oregon  # Same region as web service
+    maxmemoryPolicy: allkeys-lru  # Evict least recently used keys
+    ipAllowList: []  # Empty = allow all (required for free tier)
 
 databases:
   # PostgreSQL Database
@@ -127,15 +135,6 @@ databases:
     user: qubic_radar
     plan: free
     region: oregon  # Same region as web service
-    ipAllowList: []  # Empty = allow all (required for free tier)
-
-services:
-  # Redis Cache
-  - type: redis
-    name: qubic-risk-radar-redis
-    plan: free
-    region: oregon  # Same region as web service
-    maxmemoryPolicy: allkeys-lru  # Evict least recently used keys
     ipAllowList: []  # Empty = allow all (required for free tier)
 
 # Note: Free tier limitations
