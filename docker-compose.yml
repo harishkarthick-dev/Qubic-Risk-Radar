@@ -1,0 +1,115 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: qrr-postgres
+    environment:
+      POSTGRES_USER: qubic_radar
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change_me_in_production}
+      POSTGRES_DB: qubic_radar_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U qubic_radar" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - qrr-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: qrr-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks:
+      - qrr-network
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: qrr-app
+    ports:
+      - "8000:8000" # Backend API
+      - "3000:80" # Frontend
+    environment:
+      # Database
+      DATABASE_URL: postgresql://qubic_radar:${POSTGRES_PASSWORD:-change_me_in_production}@postgres:5432/qubic_radar_db
+
+      # Redis
+      REDIS_URL: redis://redis:6379/0
+
+      # JWT & Security
+      JWT_SECRET: ${JWT_SECRET:-your_jwt_secret_key_minimum_32_characters_long_please}
+      WEBHOOK_SECRET: ${WEBHOOK_SECRET}
+
+      # Email (SMTP)
+      SMTP_HOST: ${SMTP_HOST:-smtp.gmail.com}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER}
+      SMTP_PASSWORD: ${SMTP_PASSWORD}
+      SMTP_FROM_EMAIL: ${SMTP_FROM_EMAIL:-noreply@qubicradar.io}
+      SMTP_FROM_NAME: ${SMTP_FROM_NAME:-Qubic Risk Radar}
+
+      # URLs
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
+      BACKEND_URL: ${BACKEND_URL:-http://localhost:8000}
+
+      # Trial & Pricing
+      PRO_TRIAL_DAYS: ${PRO_TRIAL_DAYS:-30}
+      PRICING_ENABLED: ${PRICING_ENABLED:-true}
+
+      # Discord
+      DISCORD_BOT_TOKEN: ${DISCORD_BOT_TOKEN}
+      DISCORD_WEBHOOK_URL_CRITICAL: ${DISCORD_WEBHOOK_URL_CRITICAL}
+      DISCORD_WEBHOOK_URL_WARNING: ${DISCORD_WEBHOOK_URL_WARNING}
+      DISCORD_WEBHOOK_URL_INFO: ${DISCORD_WEBHOOK_URL_INFO}
+
+      # Telegram
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
+      TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID}
+
+      # SendGrid
+      SENDGRID_API_KEY: ${SENDGRID_API_KEY}
+      SENDGRID_FROM_EMAIL: ${SENDGRID_FROM_EMAIL:-noreply@qubicradar.io}
+      ALERT_EMAIL_RECIPIENTS: ${ALERT_EMAIL_RECIPIENTS}
+
+      # Gemini AI
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-1.5-pro}
+      AI_DETECTION_ENABLED: ${AI_DETECTION_ENABLED:-true}
+
+      # Qubic
+      QUBIC_RPC_URL: ${QUBIC_RPC_URL:-https://rpc.qubic.org}
+
+      # CORS
+      CORS_ORIGINS: '["http://localhost:3000"]'
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - qrr-network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:
+
+
+networks:
+  qrr-network:
+    driver: bridge
