@@ -107,6 +107,26 @@ npm run dev
 
 </details>
 
+## ☁️ Deploy to Render (Free Hosting)
+
+Deploy to the cloud with one click:
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy)
+
+**What you get:**
+- ✅ Free hosting for 90 days
+- ✅ PostgreSQL database (1GB)
+- ✅ Redis cache (25MB)
+- ✅ Automatic deployments on git push
+- ✅ HTTPS enabled by default
+
+**After deployment:**
+1. Set environment variables in Render Dashboard
+2. Your app is live at `https://your-app.onrender.com`
+
+See [RENDER_DEPLOYMENT.md](RENDER_DEPLOYMENT.md) for detailed deployment guide.
+
+
 ## 📝 Environment Variables
 
 ### Backend (.env)

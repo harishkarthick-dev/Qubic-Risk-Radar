@@ -1,0 +1,145 @@
+# Render.com Deployment Configuration
+# Documentation: https://render.com/docs/blueprint-spec
+
+services:
+  # Main Application (Frontend + Backend)
+  - type: web
+    name: qubic-risk-radar
+    env: docker
+    plan: free
+    region: oregon  # Choose: oregon, frankfurt, singapore
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    
+    # Health check
+    healthCheckPath: /health
+    
+    # Auto-deploy on push to main
+    autoDeploy: true
+    
+    # Environment variables
+    envVars:
+      # Database connection (auto-populated by Render)
+      - key: DATABASE_URL
+        fromDatabase:
+          name: qubic-risk-radar-db
+          property: connectionString
+      
+      # Redis connection (auto-populated by Render)
+      - key: REDIS_URL
+        fromService:
+          name: qubic-risk-radar-redis
+          type: redis
+          property: connectionString
+      
+      # JWT & Security (set these in Render Dashboard)
+      - key: JWT_SECRET
+        generateValue: true  # Auto-generate secure secret
+      
+      - key: WEBHOOK_SECRET
+        sync: false  # Set manually in dashboard
+      
+      # URLs (auto-configured)
+      - key: FRONTEND_URL
+        value: https://qubic-risk-radar.onrender.com
+      
+      - key: BACKEND_URL
+        value: https://qubic-risk-radar.onrender.com
+      
+      # Email configuration (SMTP)
+      - key: SMTP_HOST
+        value: smtp.gmail.com
+      
+      - key: SMTP_PORT
+        value: 587
+      
+      - key: SMTP_USER
+        sync: false  # Set in dashboard
+      
+      - key: SMTP_PASSWORD
+        sync: false  # Set in dashboard
+      
+      - key: SMTP_FROM_EMAIL
+        value: noreply@qubicradar.io
+      
+      - key: SMTP_FROM_NAME
+        value: Qubic Risk Radar
+      
+      # Trial & Pricing
+      - key: PRO_TRIAL_DAYS
+        value: 30
+      
+      - key: PRICING_ENABLED
+        value: true
+      
+      # Discord (optional - set in dashboard if needed)
+      - key: DISCORD_BOT_TOKEN
+        sync: false
+      
+      - key: DISCORD_WEBHOOK_URL_CRITICAL
+        sync: false
+      
+      - key: DISCORD_WEBHOOK_URL_WARNING
+        sync: false
+      
+      - key: DISCORD_WEBHOOK_URL_INFO
+        sync: false
+      
+      # Telegram (optional - set in dashboard if needed)
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      
+      - key: TELEGRAM_CHAT_ID
+        sync: false
+      
+      # SendGrid (optional - set in dashboard if needed)
+      - key: SENDGRID_API_KEY
+        sync: false
+      
+      - key: SENDGRID_FROM_EMAIL
+        value: noreply@qubicradar.io
+      
+      - key: ALERT_EMAIL_RECIPIENTS
+        sync: false
+      
+      # Gemini AI (optional - set in dashboard if needed)
+      - key: GEMINI_API_KEY
+        sync: false
+      
+      - key: GEMINI_MODEL
+        value: gemini-1.5-pro
+      
+      - key: AI_DETECTION_ENABLED
+        value: true
+      
+      # Qubic
+      - key: QUBIC_RPC_URL
+        value: https://rpc.qubic.org
+      
+      # CORS - allow frontend access
+      - key: CORS_ORIGINS
+        value: '["https://qubic-risk-radar.onrender.com"]'
+
+databases:
+  # PostgreSQL Database
+  - name: qubic-risk-radar-db
+    databaseName: qubic_radar_db
+    user: qubic_radar
+    plan: free
+    region: oregon  # Same region as web service
+    ipAllowList: []  # Empty = allow all (required for free tier)
+
+services:
+  # Redis Cache
+  - type: redis
+    name: qubic-risk-radar-redis
+    plan: free
+    region: oregon  # Same region as web service
+    maxmemoryPolicy: allkeys-lru  # Evict least recently used keys
+    ipAllowList: []  # Empty = allow all (required for free tier)
+
+# Note: Free tier limitations
+# - Web service: Spins down after 15 minutes of inactivity (cold starts take ~30-60s)
+# - PostgreSQL: 90 days free, then expires (1GB storage, 10 concurrent connections)
+# - Redis: 90 days free, then expires (25MB max memory)
+# - For production, upgrade to paid plans for better performance and persistence
